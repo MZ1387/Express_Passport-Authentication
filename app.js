@@ -5,7 +5,18 @@ var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 var mongoose = require('mongoose');
+var passport = require('passport');
+var session = require('express-session');
+var MongoStore = require('connect-mongo')(session);
 var User = require("./models/user");
+
+passport.serializeUser(function(user, done) {
+  done(null, user._id);
+});
+
+passport.deserializeUser(function(userId, done) {
+  User.findById(userId, done)
+});
 
 var routes = require('./routes/index');
 
@@ -26,6 +37,24 @@ app.use(express.static(path.join(__dirname, 'public')));
 // mongodb connection
 mongoose.connect("mongodb://localhost:27017/bookworm-oauth");
 var db = mongoose.connection;
+
+// session config for passport and mongodb
+var sessionOption = {
+  secret: "Puerto Vallarta",
+  resave: true,
+  saveUninitialized: true,
+  store: new MongoStore({
+    mongooseConnection: db
+  })
+}
+
+app.use(session(sessionOption));
+
+// initialize passport
+app.use(passport.initialize());
+
+// restore session
+app.use(passport.session());
 
 // mongo error
 db.on('error', console.error.bind(console, 'connection error:'));
