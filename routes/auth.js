@@ -15,6 +15,19 @@ router.get('/github/return',
   }
 );
 
+// GET /auth/login/facebook
+router.get('/login/facebook',
+  passport.authenticate('facebook', {scope: ["email"]}));
+
+// GET /auth/facebook/return
+router.get('/facebook/return',
+  passport.authenticate('facebook', {failureRedirect: '/'}),
+  function(req, res) {
+    // success auth, redirect profile page
+    res.redirect('/profile');
+  }
+);
+
 // GET /auth/logout
 router.get('/logout', function(req, res) {
   req.logout();

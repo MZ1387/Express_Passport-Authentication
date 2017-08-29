@@ -7,17 +7,12 @@ var bodyParser = require('body-parser');
 var mongoose = require('mongoose');
 var passport = require('passport');
 var GitHubStrategy = require('passport-github').Strategy;
+var FacebookStrategy = require('passport-facebook').Strategy;
 var session = require('express-session');
 var MongoStore = require('connect-mongo')(session);
 var User = require("./models/user");
 
-// configure GitHub Strategy
-passport.use(new GitHubStrategy({
-  clientID: process.env.GITHUB_CLIENT_ID,
-  clientSecret: process.env.GITHUB_CLIENT_SECRET,
-  callbackURL: "http://localhost:3000/auth/github/return"
-}, function(accessToken, refreshToken, profile, done) {
-  console.log('PROFILE', profile);
+function generateOrFindUser(accessToken, refreshToken, profile, done) {
   if (profile.emails[0]) {
     User.findOneAndUpdate({
       email: profile.emails[0].value
@@ -33,8 +28,22 @@ passport.use(new GitHubStrategy({
     var noEmailError = new Error("Your email privacy settings prevent your from signing into Bookworm");
     done(noEmailError, null);
   }
+}
 
-}));
+// configure GitHub Strategy
+passport.use(new GitHubStrategy({
+  clientID: '296a63b043981e893a70',
+  clientSecret: '7fae2d65a542b550d2bfdfcda530bdc3ca3e2444',
+  callbackURL: "http://localhost:3000/auth/github/return"
+}, generateOrFindUser));
+
+// configure Facebook Strategy
+passport.use(new FacebookStrategy({
+  clientID: '1935154940071974',
+  clientSecret: '2bf09e41efa1910269e4d3db5b20c844',
+  callbackURL: "http://localhost:3000/auth/facebook/return",
+  profileFields: ['id', 'displayName', 'photos', 'email']
+}, generateOrFindUser));
 
 passport.serializeUser(function(user, done) {
   done(null, user._id);
